@@ -1,0 +1,5 @@
+api:
+    type: rest
+    prefix: api
+    resource: App\Controller\OrderController
+    methods: [GET, POST]

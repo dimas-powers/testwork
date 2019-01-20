@@ -1,0 +1,33 @@
+parameters:
+    env(MERCHANT_ID): 'unicorn'
+    env(PRIVATE_KEY): '0795f79f-a045-4901-adf0-05481df6c666'
+    env(API_URL): 'https://pay.signedpay.com/api/v1/'
+
+    app.merchant_id: '%env(MERCHANT_ID)%'
+    app.private_key: '%env(PRIVATE_KEY)%'
+    app.api_url: '%env(API_URL)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        public: false       # Allows optimizing the container by removing unused services; this also means
+                            # fetching services directly from the container via $container->get() won't work.
+                            # The best practice is to be explicit about your dependencies anyway.
+
+    App\:
+        resource: '../src/*'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+    App\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']
+
+    App\Service\SolidGateApi\SolidGateApi:
+        class: App\Service\SolidGateApi\SolidGateApi
+        public: true
+        arguments:
+            $merchantId: '%env(MERCHANT_ID)%'
+            $privateKey: '%env(PRIVATE_KEY)%'
+            $baseUri: '%env(API_URL)%'

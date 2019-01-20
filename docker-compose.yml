@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx
+    ports:
+      - 8080:80
+      - 8081:81
+    volumes:
+      - ./tools/nginx:/etc/nginx/conf.d
+      - ./src:/var/www
+    networks:
+      - g-network
+    links:
+      - php
+
+  php:
+    container_name: api
+    image: php:7.2-fpm
+    working_dir: /var/www/api
+    volumes:
+      - ./src/api:/var/www/api
+      - ./tools/api:/var/tools/api
+    entrypoint: /var/tools/api/entrypoint.sh
+    networks:
+      - g-network
+    command: ["php-fpm"]
+
+  db:
+    container_name: db
+    image: postgres
+    ports:
+      - 5433:5432
+    networks:
+      - g-network
+    environment:
+      POSTGRES_PASSWORD: "da12swd22d"
+
+networks:
+  g-network:
+    external: true
