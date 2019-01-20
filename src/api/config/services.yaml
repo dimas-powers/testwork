@@ -24,10 +24,14 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
-    App\Service\SolidGateApi\SolidGateApi:
-        class: App\Service\SolidGateApi\SolidGateApi
+    App\Service\SolidGateApi\SolidGateApiService:
+        class: App\Service\SolidGateApi\SolidGateApiService
         public: true
         arguments:
             $merchantId: '%env(MERCHANT_ID)%'
             $privateKey: '%env(PRIVATE_KEY)%'
             $baseUri: '%env(API_URL)%'
+
+#    App\Service\Order\OrderService:
+#        class: App\Service\Order\OrderService
+#        public: true

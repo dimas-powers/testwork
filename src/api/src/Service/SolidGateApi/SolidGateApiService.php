@@ -13,7 +13,7 @@ namespace App\Service\SolidGateApi;
 
 use Signedpay\API\Api;
 
-class SolidGateApi extends Api
+class SolidGateApiService extends Api
 {
     /**
      * SolidGateApi constructor.
@@ -25,4 +25,6 @@ class SolidGateApi extends Api
     {
         parent::__construct($merchantId, $privateKey, $baseUri);
     }
+
+
 }
