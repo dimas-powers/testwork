@@ -5,4 +5,5 @@ sudo chmod +x ./tools/api/entrypoint.sh;
 docker-compose down && docker-compose up -d;
 docker exec -it api composer install;
 docker exec -it api php bin/console doctrine:database:create;
+docker exec -it api php bin/console doctrine:migrations:migrate;
 docker-compose down;

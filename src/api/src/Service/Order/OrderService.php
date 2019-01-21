@@ -11,7 +11,47 @@ declare(strict_types=1);
 
 namespace App\Service\Order;
 
+use App\Controller\OrderController;
+use App\Entity\Order;
+use Symfony\Component\Serializer\SerializerInterface;
+
 class OrderService
 {
 
+    /**
+     * @var OrderController $orderController
+     */
+    private $orderController;
+
+    /**
+     * @var SerializerInterface
+     */
+    protected $serializer;
+
+    /**
+     * OrderService constructor.
+     */
+    public function __construct(OrderController $orderController, SerializerInterface $serializer)
+    {
+        $this->serializer = $serializer;
+        $this->orderController = $orderController;
+    }
+
+    public function cardPayment()
+    {
+        $response = $this->orderController->getOrderAction();
+
+        var_dump($response->getStatusCode());die();
+
+        if ($response->getStatusCode() !== 200) {
+            throw new SynchronizerServiceApiException('Cant get balance.');
+        }
+
+        /** @var BalanceResponse $balanceResponse */
+        $balanceResponse = $this->serializer->deserialize((string)$response->getBody(), BalanceResponse::class, 'json');
+
+        if ($balanceResponse->getStatus() !== true) {
+            throw new SynchronizerServiceApiException($balanceResponse->getError());
+        }
+    }
 }

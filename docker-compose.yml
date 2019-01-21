@@ -10,8 +10,8 @@ services:
     volumes:
       - ./tools/nginx:/etc/nginx/conf.d
       - ./src:/var/www
-    networks:
-      - g-network
+#    networks:
+#      - g-network
     links:
       - php
 
@@ -23,8 +23,8 @@ services:
       - ./src/api:/var/www/api
       - ./tools/api:/var/tools/api
     entrypoint: /var/tools/api/entrypoint.sh
-    networks:
-      - g-network
+#    networks:
+#      - g-network
     command: ["php-fpm"]
 
   db:
@@ -32,11 +32,12 @@ services:
     image: postgres
     ports:
       - 5433:5432
-    networks:
-      - g-network
+#    networks:
+#      - g-network
     environment:
+      POSTGRES_DB: "db"
       POSTGRES_PASSWORD: "da12swd22d"
 
-networks:
-  g-network:
-    external: true
+#networks:
+#  g-network:
+#    external: true

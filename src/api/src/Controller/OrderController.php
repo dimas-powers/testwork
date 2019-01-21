@@ -1,17 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
-use App\Entity\Balance;
-use App\Entity\Customer;
-use App\Entity\Order;
-use App\Repository\Balance\BalanceRepository;
-use App\Repository\Customer\CustomerRepository;
-use App\Repository\Order\OrderRepository;
 use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Routing\Annotation\Route;
 
 class OrderController extends AbstractFOSRestController
 {
@@ -25,13 +22,10 @@ class OrderController extends AbstractFOSRestController
      */
     protected $serializer;
 
-    protected $rep;
-
-    public function __construct(SolidGateApiService $solidGateApi, SerializerInterface $serializer, OrderRepository $rep)
+    public function __construct(SolidGateApiService $solidGateApi, SerializerInterface $serializer)
     {
         $this->solidGateApi = $solidGateApi;
         $this->serializer = $serializer;
-        $this->rep = $rep;
     }
 
     public function getOrderAction(): Response
@@ -44,7 +38,7 @@ class OrderController extends AbstractFOSRestController
             'customer_email' => 'test@test.com',
             'geo_country' => 'NGR',
             'ip_address' => '178.150.56.130',
-            'order_id' => 123,
+            'order_id' => 125,
             'order_description' => 'Premium package',
             'platform' => 'test'
         ];
@@ -54,7 +48,10 @@ class OrderController extends AbstractFOSRestController
         return new Response($this->serializer->serialize($response, 'json'));
     }
 
-    public function getChargeAction(): Response
+    /**
+     * @Route("/api/charge", name="charge")
+     */
+    public function getCharge(): Response
     {
         $credentials = [
             'order_id' => 123,
