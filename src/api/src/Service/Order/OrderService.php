@@ -13,15 +13,18 @@ namespace App\Service\Order;
 
 use App\Controller\OrderController;
 use App\Entity\Order;
+use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
+use App\Service\SolidGateApi\SolidGateApiService;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class OrderService
 {
 
     /**
-     * @var OrderController $orderController
+     * @var PaymentApiInterface $paymentApi
      */
-    private $orderController;
+    private $paymentApi;
 
     /**
      * @var SerializerInterface
@@ -31,27 +34,71 @@ class OrderService
     /**
      * OrderService constructor.
      */
-    public function __construct(OrderController $orderController, SerializerInterface $serializer)
+    public function __construct(PaymentApiInterface $paymentApi, SerializerInterface $serializer)
     {
         $this->serializer = $serializer;
-        $this->orderController = $orderController;
+        $this->paymentApi = $paymentApi;
     }
 
-    public function cardPayment()
+//    public function cardPayment()
+//    {
+//        $response = $this->orderController->getOrderAction();
+//
+//        var_dump($response->getStatusCode());die();
+//
+//        if ($response->getStatusCode() !== 200) {
+//            throw new SynchronizerServiceApiException('Cant get balance.');
+//        }
+//
+//        /** @var BalanceResponse $balanceResponse */
+//        $balanceResponse = $this->serializer->deserialize((string)$response->getBody(), BalanceResponse::class, 'json');
+//
+//        if ($balanceResponse->getStatus() !== true) {
+//            throw new SynchronizerServiceApiException($balanceResponse->getError());
+//        }
+//    }
+
+
+    /**
+     * @return PaymentApiInterface
+     */
+    public function getApi(): PaymentApiInterface
     {
-        $response = $this->orderController->getOrderAction();
+        return $this->paymentApi;
+    }
 
-        var_dump($response->getStatusCode());die();
+    /**
+     * @param PaymentApiInterface $paymentApi
+     */
+    public function setApi(PaymentApiInterface $paymentApi): void
+    {
+        $this->paymentApi = $paymentApi;
+    }
 
-        if ($response->getStatusCode() !== 200) {
-            throw new SynchronizerServiceApiException('Cant get balance.');
-        }
+    /**
+     * @param array $attributes
+     * @return Response
+     */
+    public function makePayment(array $attributes): Response
+    {
+        return $this->getApi()->initPayments($attributes);
+    }
 
-        /** @var BalanceResponse $balanceResponse */
-        $balanceResponse = $this->serializer->deserialize((string)$response->getBody(), BalanceResponse::class, 'json');
+    /**
+     * @param array $attributes
+     * @return Response
+     */
+    public function makeCharge(array $attributes): Response
+    {
+        return $this->getApi()->charges($attributes);
+    }
 
-        if ($balanceResponse->getStatus() !== true) {
-            throw new SynchronizerServiceApiException($balanceResponse->getError());
-        }
+    /**
+     * @param array $attributes
+     * @return Response
+     */
+    public function getOrderStatus(array $attributes): Response
+    {
+        return $this->getApi()->orderStatus($attributes);
     }
 }

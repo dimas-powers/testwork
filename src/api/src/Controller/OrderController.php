@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Order\OrderService;
 use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,24 +14,27 @@ use Symfony\Component\Routing\Annotation\Route;
 class OrderController extends AbstractFOSRestController
 {
     /**
-     * @var SolidGateApiService
+     * @var OrderService
      */
-    protected $solidGateApi;
+    protected $orderService;
 
     /**
      * @var SerializerInterface
      */
     protected $serializer;
 
-    public function __construct(SolidGateApiService $solidGateApi, SerializerInterface $serializer)
+    public function __construct(OrderService $orderService, SerializerInterface $serializer)
     {
-        $this->solidGateApi = $solidGateApi;
+        $this->orderService = $orderService;
         $this->serializer = $serializer;
     }
 
-    public function getOrderAction(): Response
+    /**
+     * @Route("/api/order", name="order")
+     */
+    public function getOrder()
     {
-        $credentials = [
+        $attributes = [
             'privateKey' => '0795f79f-a045-4901-adf0-05481df6c666',
             'merchantId' => 'unicorn',
             'amount' => 1,
@@ -38,30 +42,28 @@ class OrderController extends AbstractFOSRestController
             'customer_email' => 'test@test.com',
             'geo_country' => 'NGR',
             'ip_address' => '178.150.56.130',
-            'order_id' => 125,
+            'order_id' => 128,
             'order_description' => 'Premium package',
             'platform' => 'test'
         ];
 
-        $response = $this->solidGateApi->initPayment($credentials);
-
-        return new Response($this->serializer->serialize($response, 'json'));
+        $response = $this->orderService->makePayment($attributes);
     }
 
     /**
      * @Route("/api/charge", name="charge")
      */
-    public function getCharge(): Response
+    public function getCharge()
     {
-        $credentials = [
-            'order_id' => 123,
+        $attributes = [
+            'order_id' => 128,
             'amount' => 1,
             'currency' => 'USD',
-            'card_number' => 4111111111111111,
-            'card_holder' => 'JOHN SNOW',
-            'card_exp_month' => 01,
-            'card_exp_year' => 2024,
-            'card_cvv' => 123,
+            'card_number' => 4532456618142692,
+            'card_holder' => 'Kurt Cruickshank',
+            'card_exp_month' => 03,
+            'card_exp_year' => 2021,
+            'card_cvv' => 967,
             'card_pin' => 1111,
             'order_description' => 'Premium package',
             'customer_email' => 'jondou@gmail.com',
@@ -70,19 +72,18 @@ class OrderController extends AbstractFOSRestController
             'geo_country' => 'GBR'
         ];
 
-        $response = $this->solidGateApi->charge($credentials);
-
-        return new Response($this->serializer->serialize($response, 'json'));
+        $response = $this->orderService->makeCharge($attributes);
     }
 
-    public function getOrderStatusAction(): Response
+    /**
+     * @Route("/api/order-status", name="order-status")
+     */
+    public function getOrderStatus()
     {
-        $credentials = [
-            'order_id' => 123
+        $attributes = [
+            'order_id' => 128
         ];
 
-        $response = $this->solidGateApi->status($credentials);
-
-        return new Response($this->serializer->serialize($response, 'json'));
+        $response = $this->orderService->getOrderStatus($attributes);
     }
 }
