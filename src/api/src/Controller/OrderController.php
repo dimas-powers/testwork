@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Exception\CustomerException;
+use App\Factory\Order\OrderContext;
+use App\Factory\Order\OrderFactoryInterface;
+use App\Service\Customer\CustomerService;
 use App\Service\Order\OrderService;
 use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use FOS\RestBundle\Controller\Annotations\RequestParam;
+use FOS\RestBundle\Request\ParamFetcher;
 
 class OrderController extends AbstractFOSRestController
 {
@@ -23,31 +29,49 @@ class OrderController extends AbstractFOSRestController
      */
     protected $serializer;
 
-    public function __construct(OrderService $orderService, SerializerInterface $serializer)
-    {
+    /**
+     * @var CustomerService
+     */
+    protected $customerService;
+
+    /**
+     * @var OrderFactoryInterface
+     */
+    private $orderFactory;
+
+    public function __construct(
+        OrderService $orderService,
+        SerializerInterface $serializer,
+        CustomerService $customerService,
+        OrderFactoryInterface $orderFactory
+    ) {
         $this->orderService = $orderService;
         $this->serializer = $serializer;
+        $this->customerService = $customerService;
+        $this->orderFactory = $orderFactory;
     }
 
     /**
-     * @Route("/api/order", name="order")
+     * @RequestParam(name="amount", requirements="\d+", nullable=true)
+     * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
+     * @RequestParam(name="customer_email", requirements="[^@]+@[^\.]+\..+")
+     * @RequestParam(name="geo_country", requirements="[A-z]+")
+     * @RequestParam(name="ip_address", requirements="\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+     * @RequestParam(name="order_description", requirements="^[a-zA-Z0-9_ ]+")
+     * @RequestParam(name="platform", requirements="[A-z]+")
+     *
+     * @Route("/api/order", name="order", methods={"PUT"})
      */
-    public function getOrder()
+    public function putOrder(ParamFetcher $paramFetcher)
     {
-        $attributes = [
-            'privateKey' => '0795f79f-a045-4901-adf0-05481df6c666',
-            'merchantId' => 'unicorn',
-            'amount' => 1,
-            'currency' => 'USD',
-            'customer_email' => 'test@test.com',
-            'geo_country' => 'NGR',
-            'ip_address' => '178.150.56.130',
-            'order_id' => 128,
-            'order_description' => 'Premium package',
-            'platform' => 'test'
-        ];
+        $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
 
-        $response = $this->orderService->makePayment($attributes);
+        if ($customer === null) {
+            return ['success' => false, 'data' => ['There is no user with such email']];
+        }
+
+        $orderContext = new OrderContext($paramFetcher, $customer);
+        $order = $this->orderFactory->create($orderContext);
     }
 
     /**

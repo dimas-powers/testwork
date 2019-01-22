@@ -1,10 +1,41 @@
 <html>
 <head>
     <title>Product</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 </head>
 <body>
     <h1>Some product</h1>
 
     <input type="button" value="Buy" onclick="console.log('buy')" />
+
+    <script>
+        const fixture = {
+            'amount': 2001,
+            'currency': 'USD',
+            'customer_email': 'somemail@gmail.com',
+            'geo_country': 'GBR',
+            'ip_address': '194.23.123.23',
+            'order_id': 3131223,
+            'order_description': 'Premium order',
+            'platform': 'WEB'
+        };
+
+        const createOrder = () => {
+            $.ajax({
+                url: 'http://127.0.0.1:8081',
+                method: 'PUT',
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(fixture)
+            })
+            .done((...args) => {
+                console.log('Success', args);
+            })
+            .fail((...args) => {
+                console.log('Fail', args);
+            });
+        }
+    </script>
+
 </body>
 </html>

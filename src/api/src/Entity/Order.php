@@ -42,6 +42,21 @@ class Order
     private $currency;
 
     /**
+     * @ORM\Column(type="string")
+     */
+    private $geoCountry;
+
+    /**
+     * @ORM\Column(type="string")
+     */
+    private $ipAddress;
+
+    /**
+     * @ORM\Column(type="string")
+     */
+    private $platform;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Customer")
      * @ORM\JoinColumn(nullable=false)
      */
@@ -117,5 +132,53 @@ class Order
         $this->customer = $customer;
 
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getGeoCountry()
+    {
+        return $this->geoCountry;
+    }
+
+    /**
+     * @param mixed $geoCountry
+     */
+    public function setGeoCountry($geoCountry): void
+    {
+        $this->geoCountry = $geoCountry;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getIpAddress()
+    {
+        return $this->ipAddress;
+    }
+
+    /**
+     * @param mixed $ipAddress
+     */
+    public function setIpAddress($ipAddress): void
+    {
+        $this->ipAddress = $ipAddress;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPlatform()
+    {
+        return $this->platform;
+    }
+
+    /**
+     * @param mixed $platform
+     */
+    public function setPlatform($platform): void
+    {
+        $this->platform = $platform;
     }
 }

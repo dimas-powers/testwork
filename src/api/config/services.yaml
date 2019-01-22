@@ -6,6 +6,7 @@ parameters:
     app.merchant_id: '%env(MERCHANT_ID)%'
     app.private_key: '%env(PRIVATE_KEY)%'
     app.api_url: '%env(API_URL)%'
+    locale: 'en'
 
 services:
     # default configuration for services in *this* file
