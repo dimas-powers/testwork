@@ -35,12 +35,12 @@ services:
 
     Symfony\Component\Serializer\Normalizer\ObjectNormalizer:
       class: Symfony\Component\Serializer\Normalizer\ObjectNormalizer
-      public: false
+      public: true
       tags:
         - { name: 'serializer.normalizer' }
 
     Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer:
       class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
-      public: false
+      public: true
       tags:
         - { name: 'serializer.normalizer' }

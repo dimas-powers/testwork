@@ -1,4 +1,4 @@
-api:
-    type: rest
-    prefix: /api
-    resource: App\Controller\OrderController
+#api:
+#    type: rest
+#    prefix: /api
+#    resource: App\Controller\OrderController

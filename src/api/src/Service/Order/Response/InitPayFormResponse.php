@@ -1,33 +1,29 @@
 <?php
-declare(strict_types=1);
 /**
  * Created by PhpStorm.
- * User: Dmitriy Ivanenko
- * Date: 22.01.19
- * Time: 17:22
+ * User: dmytro
+ * Date: 23.01.19
+ * Time: 0:13
  */
 
 namespace App\Service\Order\Response;
 
 class InitPayFormResponse
 {
-    /**
-     * @var string
-     */
-    public $token;
+    protected $token;
 
     /**
-     * @return string
+     * @return mixed
      */
-    public function getToken(): string
+    public function getToken()
     {
         return $this->token;
     }
 
     /**
-     * @param string $token
+     * @param mixed $token
      */
-    public function setToken(string $token): void
+    public function setToken($token): void
     {
         $this->token = $token;
     }

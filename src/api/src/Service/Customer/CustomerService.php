@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace App\Service\Customer;
 
+use App\Entity\Balance;
 use App\Entity\Customer;
+use App\Service\Order\Response\InitPaymentResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
 
@@ -42,5 +44,38 @@ class CustomerService
         $email = $fetcher->get('customer_email');
 
         return $this->entityManager->getRepository(Customer::class)->findOneBy(['email' => $email]);
+    }
+
+    /**
+     * @param Customer $customer
+     * @param InitPaymentResponse $initPaymentResponse
+     */
+    public function setTokenToCustomer(Customer $customer, InitPaymentResponse $initPaymentResponse): void
+    {
+        $customer->setToken($initPaymentResponse->getToken());
+
+        $this->entityManager->persist($customer);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @param Customer $customer
+     * @param InitPaymentResponse $initPaymentResponse
+     */
+    public function eraseCredentials(Customer $customer, InitPaymentResponse $initPaymentResponse): void
+    {
+        $balances = $customer->getBalances();
+
+        /**
+         * @var Balance $balance
+         */
+        foreach ($balances as $balance) {
+            if ($balance->getCurrency() === $initPaymentResponse->getCurrency()) {
+                $balance->setAmount($balance->getAmount() - $initPaymentResponse->getAmount());
+            }
+        }
+
+        $this->entityManager->persist($balance);
+        $this->entityManager->flush();
     }
 }

@@ -7,9 +7,12 @@ namespace App\Controller;
 use App\Exception\CustomerException;
 use App\Factory\Order\OrderContext;
 use App\Factory\Order\OrderFactoryInterface;
+use App\Factory\Payment\InitPaymentResponseContext;
+use App\Factory\Payment\InitPaymentResponseFactory;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\OrderService;
 use App\Service\Order\PaymentContext;
+use App\Service\Order\Response\InitOrderResponse;
 use App\Service\Order\Response\InitPayFormResponse;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\SolidGateApi\SolidGateApiService;
@@ -42,16 +45,23 @@ class OrderController extends AbstractFOSRestController
      */
     private $orderFactory;
 
+    /**
+     * @var InitPaymentResponseFactory
+     */
+    private $initPaymentResponseFactory;
+
     public function __construct(
         OrderService $orderService,
         SerializerInterface $serializer,
         CustomerService $customerService,
-        OrderFactoryInterface $orderFactory
+        OrderFactoryInterface $orderFactory,
+        InitPaymentResponseFactory $initPaymentResponseFactory
     ) {
         $this->orderService = $orderService;
         $this->serializer = $serializer;
         $this->customerService = $customerService;
         $this->orderFactory = $orderFactory;
+        $this->initPaymentResponseFactory = $initPaymentResponseFactory;
     }
 
     /**
@@ -70,7 +80,7 @@ class OrderController extends AbstractFOSRestController
         $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
 
         if ($customer === null) {
-            return ['success' => false, 'data' => ['There is no user with such email']];
+            throw new CustomerException('There is no user with such email');
         }
 
         $orderContext = new OrderContext($paramFetcher, $customer);
@@ -78,9 +88,13 @@ class OrderController extends AbstractFOSRestController
 
         $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
         $response = $this->orderService->makePayment($paymentContext);
+        $initPaymentResponseContext = new InitPaymentResponseContext(json_decode($response->getContent(),true));
 
-        /** @var InitPaymentResponse $responseApi */
-        $responseApi = $this->serializer->deserialize($response->getContent(), InitPayFormResponse::class, 'json');
+        $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
+        $this->customerService->setTokenToCustomer($customer, $initPaymentResponse);
+        $this->customerService->eraseCredentials($customer, $initPaymentResponse);
+
+        return new Response($this->serializer->serialize($initPaymentResponse, 'json'));
     }
 
     /**

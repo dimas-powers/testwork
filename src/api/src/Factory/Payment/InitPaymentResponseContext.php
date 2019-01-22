@@ -3,20 +3,52 @@
  * Created by PhpStorm.
  * User: dmytro
  * Date: 23.01.19
- * Time: 0:14
+ * Time: 0:10
  */
 
-namespace App\Service\Order\Response;
+namespace App\Factory\Payment;
 
+use App\Factory\Payment\InitPaymentResponseContextInterface;
 
-class InitOrderResponse
+class InitPaymentResponseContext implements InitPaymentResponseContextInterface
 {
-    public $order_id;
-    public $status;
-    public $amount;
-    public $currency;
-    public $fraudulent;
-    public $total_fee_amount;
+    private $token;
+    private $order_id;
+    private $status;
+    private $amount;
+    private $currency;
+    private $fraudulent;
+    private $total_fee_amount;
+
+    /**
+     * InitPaymentResponseContext constructor.
+     */
+    public function __construct(array $response)
+    {
+        $this->token = $response['pay_form']['token'];
+        $this->amount = $response['order']['amount'];
+        $this->order_id = $response['order']['order_id'];
+        $this->status = $response['order']['status'];
+        $this->currency = $response['order']['currency'];
+        $this->fraudulent = $response['order']['fraudulent'];
+        $this->total_fee_amount = $response['order']['total_fee_amount'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * @param mixed $token
+     */
+    public function setToken($token): void
+    {
+        $this->token = $token;
+    }
 
     /**
      * @return mixed

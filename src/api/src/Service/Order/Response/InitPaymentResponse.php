@@ -11,45 +11,125 @@ namespace App\Service\Order\Response;
 
 class InitPaymentResponse
 {
-    /**
-     * @var InitPayFormResponse
-     */
-    public $pay_form;
+    protected $token;
+    protected $order_id;
+    protected $status;
+    protected $amount;
+    protected $currency;
+    protected $fraudulent;
+    protected $total_fee_amount;
 
     /**
-     * @var InitOrderResponse
+     * @return mixed
      */
-    public $order;
-
-    /**
-     * @return InitPayFormResponse
-     */
-    public function getPayForm(): InitPayFormResponse
+    public function getToken()
     {
-        return $this->pay_form;
+        return $this->token;
     }
 
     /**
-     * @param InitPayFormResponse $pay_form
+     * @param mixed $token
      */
-    public function setPayForm(InitPayFormResponse $pay_form): void
+    public function setToken($token): void
     {
-        $this->pay_form = $pay_form;
+        $this->token = $token;
     }
 
     /**
-     * @return InitOrderResponse
+     * @return mixed
      */
-    public function getOrder(): InitOrderResponse
+    public function getOrderId()
     {
-        return $this->order;
+        return $this->order_id;
     }
 
     /**
-     * @param InitOrderResponse $order
+     * @param mixed $order_id
      */
-    public function setOrder(InitOrderResponse $order): void
+    public function setOrderId($order_id): void
     {
-        $this->order = $order;
+        $this->order_id = $order_id;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param mixed $status
+     */
+    public function setStatus($status): void
+    {
+        $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAmount()
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param mixed $amount
+     */
+    public function setAmount($amount): void
+    {
+        $this->amount = $amount;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCurrency()
+    {
+        return $this->currency;
+    }
+
+    /**
+     * @param mixed $currency
+     */
+    public function setCurrency($currency): void
+    {
+        $this->currency = $currency;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFraudulent()
+    {
+        return $this->fraudulent;
+    }
+
+    /**
+     * @param mixed $fraudulent
+     */
+    public function setFraudulent($fraudulent): void
+    {
+        $this->fraudulent = $fraudulent;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTotalFeeAmount()
+    {
+        return $this->total_fee_amount;
+    }
+
+    /**
+     * @param mixed $total_fee_amount
+     */
+    public function setTotalFeeAmount($total_fee_amount): void
+    {
+        $this->total_fee_amount = $total_fee_amount;
+    }
+
+
 }
