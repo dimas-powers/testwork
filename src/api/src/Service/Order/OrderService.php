@@ -76,12 +76,12 @@ class OrderService
     }
 
     /**
-     * @param array $attributes
+     * @param PaymentContext $context
      * @return Response
      */
-    public function makePayment(array $attributes): Response
+    public function makePayment(PaymentContext $context): Response
     {
-        return $this->getApi()->initPayments($attributes);
+        return $this->getApi()->initPayments((array) $context);
     }
 
     /**

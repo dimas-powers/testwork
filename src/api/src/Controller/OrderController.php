@@ -9,6 +9,9 @@ use App\Factory\Order\OrderContext;
 use App\Factory\Order\OrderFactoryInterface;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\OrderService;
+use App\Service\Order\PaymentContext;
+use App\Service\Order\Response\InitPayFormResponse;
+use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\Response;
@@ -72,6 +75,12 @@ class OrderController extends AbstractFOSRestController
 
         $orderContext = new OrderContext($paramFetcher, $customer);
         $order = $this->orderFactory->create($orderContext);
+
+        $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
+        $response = $this->orderService->makePayment($paymentContext);
+
+        /** @var InitPaymentResponse $responseApi */
+        $responseApi = $this->serializer->deserialize($response->getContent(), InitPayFormResponse::class, 'json');
     }
 
     /**
@@ -105,9 +114,10 @@ class OrderController extends AbstractFOSRestController
     public function getOrderStatus()
     {
         $attributes = [
-            'order_id' => 128
+            'order_id' => 127
         ];
 
         $response = $this->orderService->getOrderStatus($attributes);
+        var_dump($response->getContent());die();
     }
 }

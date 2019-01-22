@@ -33,6 +33,14 @@ services:
             $privateKey: '%env(PRIVATE_KEY)%'
             $baseUri: '%env(API_URL)%'
 
-#    App\Service\Order\OrderService:
-#        class: App\Service\Order\OrderService
-#        public: true
+    Symfony\Component\Serializer\Normalizer\ObjectNormalizer:
+      class: Symfony\Component\Serializer\Normalizer\ObjectNormalizer
+      public: false
+      tags:
+        - { name: 'serializer.normalizer' }
+
+    Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer:
+      class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
+      public: false
+      tags:
+        - { name: 'serializer.normalizer' }
