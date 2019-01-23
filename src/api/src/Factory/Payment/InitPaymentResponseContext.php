@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Created by PhpStorm.
  * User: dmytro
@@ -7,8 +9,6 @@
  */
 
 namespace App\Factory\Payment;
-
-use App\Factory\Payment\InitPaymentResponseContextInterface;
 
 class InitPaymentResponseContext implements InitPaymentResponseContextInterface
 {
@@ -25,8 +25,11 @@ class InitPaymentResponseContext implements InitPaymentResponseContextInterface
      */
     public function __construct(array $response)
     {
-        $this->token = $response['pay_form']['token'];
-        $this->amount = $response['order']['amount'];
+        if (isset($response['pay_form']['token'])) {
+            $this->token = $response['pay_form']['token'];
+        } elseif (isset($response['order']['order_id'])) {
+            $this->amount = $response['order']['amount'];
+        }
         $this->order_id = $response['order']['order_id'];
         $this->status = $response['order']['status'];
         $this->currency = $response['order']['currency'];

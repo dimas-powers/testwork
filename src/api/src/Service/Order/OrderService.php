@@ -13,12 +13,17 @@ namespace App\Service\Order;
 
 use App\Controller\OrderController;
 use App\Entity\Order;
+use App\Exception\CustomerException;
+use App\Exception\OrderException;
 use App\Factory\Order\OrderContext;
 use App\Factory\Order\OrderFactoryInterface;
+use App\Factory\OrderStatus\OrderStatusResponseContext;
+use App\Factory\OrderStatus\OrderStatusResponseFactory;
 use App\Factory\Payment\InitPaymentResponseContext;
 use App\Factory\Payment\InitPaymentResponseFactory;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\Response\InitPaymentResponse;
+use App\Service\Order\Response\OrderStatusResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use App\Service\SolidGateApi\SolidGateApiService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,6 +33,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderService
 {
+    const STATUS_APPROVED = 'approved';
+    const STATUS_DECLINED = 'declined';
 
     /**
      * @var PaymentApiInterface $paymentApi
@@ -55,6 +62,11 @@ class OrderService
     private $initPaymentResponseFactory;
 
     /**
+     * @var OrderStatusResponseFactory
+     */
+    private $orderStatusResponseFactory;
+
+    /**
      * @var EntityManagerInterface
      */
     private $entityManager;
@@ -67,6 +79,7 @@ class OrderService
      * @param CustomerService $customerService
      * @param OrderFactoryInterface $orderFactory
      * @param InitPaymentResponseFactory $initPaymentResponseFactory
+     * @param OrderStatusResponseFactory $orderStatusResponseFactory
      */
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -74,7 +87,8 @@ class OrderService
         SerializerInterface $serializer,
         CustomerService $customerService,
         OrderFactoryInterface $orderFactory,
-        InitPaymentResponseFactory $initPaymentResponseFactory
+        InitPaymentResponseFactory $initPaymentResponseFactory,
+        OrderStatusResponseFactory $orderStatusResponseFactory
     ) {
         $this->entityManager = $entityManager;
         $this->paymentApi = $paymentApi;
@@ -83,39 +97,64 @@ class OrderService
         $this->customerService = $customerService;
         $this->orderFactory = $orderFactory;
         $this->initPaymentResponseFactory = $initPaymentResponseFactory;
+        $this->orderStatusResponseFactory = $orderStatusResponseFactory;
     }
 
     /**
      * @param ParamFetcher $paramFetcher
      * @return InitPaymentResponse
+     * @throws CustomerException
      */
     public function proceedNewOrder(ParamFetcher $paramFetcher): InitPaymentResponse
     {
         $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
+
+        if ($customer === null) {
+            throw new CustomerException('There is no customer with such email');
+        }
 
         $orderContext = new OrderContext($paramFetcher, $customer);
         $order = $this->orderFactory->create($orderContext);
 
         $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
         $response = $this->makePayment($paymentContext);
+
         $initPaymentResponseContext = new InitPaymentResponseContext($response);
-
         $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
-
-        $this->customerService->setTokenToCustomer($customer, $initPaymentResponse);
-        $this->customerService->eraseCredentials($customer, $initPaymentResponse);
 
         return $initPaymentResponse;
     }
 
-    public function getOrderStatus(ParamFetcher $paramFetcher)
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @return OrderStatusResponse
+     * @throws OrderException
+     */
+    public function getOrderStatus(ParamFetcher $paramFetcher): OrderStatusResponse
     {
         /**
          * @var Order $order
          */
         $order = $this->getOrderByRequestEmail($paramFetcher);
 
-        $response = $this->getStatus($paramFetcher);
+        if ($order === null) {
+            throw new OrderException('There is no order with such id');
+        }
+
+        $orderStatusContext = new OrderStatusContext($paramFetcher);
+        $response = $this->getStatus($orderStatusContext);
+
+        $orderStatusResponseContext = new OrderStatusResponseContext($response);
+        $orderStatusResponse = $this->orderStatusResponseFactory->create($orderStatusResponseContext);
+
+        $customer = $order->getCustomer();
+
+        if ($orderStatusResponse->getStatus() === self::STATUS_APPROVED) {
+            $this->customerService->setTokenToCustomer($customer, $order);
+            $this->customerService->eraseCredentials($customer, $order);
+        }
+
+        return $orderStatusResponse;
     }
 
     /**
@@ -164,10 +203,10 @@ class OrderService
     }
 
     /**
-     * @param PaymentContext $attributes
+     * @param OrderStatusContext $attributes
      * @return array
      */
-    public function getStatus(OrderContext $attributes): array
+    public function getStatus(OrderStatusContext $attributes): array
     {
         return $this->getApi()->status((array) $attributes);
     }

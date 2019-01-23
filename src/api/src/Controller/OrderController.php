@@ -12,16 +12,16 @@ use App\Factory\Payment\InitPaymentResponseFactory;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\OrderService;
 use App\Service\Order\PaymentContext;
-use App\Service\Order\Response\InitOrderResponse;
-use App\Service\Order\Response\InitPayFormResponse;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
+use FOS\RestBundle\Controller\Annotations\QueryParam;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
 use FOS\RestBundle\Request\ParamFetcher;
+use Symfony\Component\HttpFoundation\Request;
 
 class OrderController extends AbstractFOSRestController
 {
@@ -114,17 +114,13 @@ class OrderController extends AbstractFOSRestController
     /**
      * @param ParamFetcher $paramFetcher
      *
-     * @RequestParam(name="order_id", requirements="\d+", nullable=true)
+     * @QueryParam(name="order_id", requirements="\d+", nullable=true)
      *
      * @Route("/api/order-status", name="order-status", methods={"GET"})
      */
     public function getOrderStatus(ParamFetcher $paramFetcher)
     {
-//        $attributes = [
-//            'order_id' => 127
-//        ];
-
         $response = $this->orderService->getOrderStatus($paramFetcher);
-        var_dump($response->getContent());die();
+//        var_dump($response->getContent());die();
     }
 }

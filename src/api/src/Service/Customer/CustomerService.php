@@ -13,6 +13,7 @@ namespace App\Service\Customer;
 
 use App\Entity\Balance;
 use App\Entity\Customer;
+use App\Entity\Order;
 use App\Service\Order\Response\InitPaymentResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
@@ -48,11 +49,11 @@ class CustomerService
 
     /**
      * @param Customer $customer
-     * @param InitPaymentResponse $initPaymentResponse
+     * @param Order $order
      */
-    public function setTokenToCustomer(Customer $customer, InitPaymentResponse $initPaymentResponse): void
+    public function setTokenToCustomer(Customer $customer, Order $order): void
     {
-        $customer->setToken($initPaymentResponse->getToken());
+        $customer->setToken($order->getAmount());
 
         $this->entityManager->persist($customer);
         $this->entityManager->flush();
@@ -60,9 +61,9 @@ class CustomerService
 
     /**
      * @param Customer $customer
-     * @param InitPaymentResponse $initPaymentResponse
+     * @param Order $order
      */
-    public function eraseCredentials(Customer $customer, InitPaymentResponse $initPaymentResponse): void
+    public function eraseCredentials(Customer $customer, Order $order): void
     {
         $balances = $customer->getBalances();
 
@@ -70,8 +71,8 @@ class CustomerService
          * @var Balance $balance
          */
         foreach ($balances as $balance) {
-            if ($balance->getCurrency() === $initPaymentResponse->getCurrency()) {
-                $balance->setAmount($balance->getAmount() - $initPaymentResponse->getAmount());
+            if ($balance->getCurrency() === $order->getCurrency()) {
+                $balance->setAmount($balance->getAmount() - $order->getAmount());
             }
         }
 
