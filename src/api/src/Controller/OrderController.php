@@ -77,22 +77,7 @@ class OrderController extends AbstractFOSRestController
      */
     public function putOrder(ParamFetcher $paramFetcher)
     {
-        $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
-
-        if ($customer === null) {
-            throw new CustomerException('There is no user with such email');
-        }
-
-        $orderContext = new OrderContext($paramFetcher, $customer);
-        $order = $this->orderFactory->create($orderContext);
-
-        $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
-        $response = $this->orderService->makePayment($paymentContext);
-        $initPaymentResponseContext = new InitPaymentResponseContext(json_decode($response->getContent(),true));
-
-        $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
-        $this->customerService->setTokenToCustomer($customer, $initPaymentResponse);
-        $this->customerService->eraseCredentials($customer, $initPaymentResponse);
+        $initPaymentResponse = $this->orderService->proceedNewOrder($paramFetcher);
 
         return new Response($this->serializer->serialize($initPaymentResponse, 'json'));
     }

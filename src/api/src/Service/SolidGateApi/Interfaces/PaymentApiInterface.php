@@ -18,17 +18,17 @@ interface PaymentApiInterface
      * @param array $attributes
      * @return Response
      */
-    public function initPayments(array $attributes): Response;
+    public function initPayment(array $attributes): Response;
 
     /**
      * @param array $attributes
      * @return Response
      */
-    public function charges(array $attributes): Response;
+    public function charge(array $attributes): Response;
 
     /**
      * @param array $attributes
      * @return Response
      */
-    public function orderStatus(array $attributes): Response;
+    public function status(array $attributes): Response;
 }

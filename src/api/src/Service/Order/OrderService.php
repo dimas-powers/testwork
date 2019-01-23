@@ -13,8 +13,15 @@ namespace App\Service\Order;
 
 use App\Controller\OrderController;
 use App\Entity\Order;
+use App\Factory\Order\OrderContext;
+use App\Factory\Order\OrderFactoryInterface;
+use App\Factory\Payment\InitPaymentResponseContext;
+use App\Factory\Payment\InitPaymentResponseFactory;
+use App\Service\Customer\CustomerService;
+use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use App\Service\SolidGateApi\SolidGateApiService;
+use FOS\RestBundle\Request\ParamFetcher;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -32,31 +39,65 @@ class OrderService
     protected $serializer;
 
     /**
-     * OrderService constructor.
+     * @var CustomerService
      */
-    public function __construct(PaymentApiInterface $paymentApi, SerializerInterface $serializer)
-    {
-        $this->serializer = $serializer;
+    protected $customerService;
+
+    /**
+     * @var OrderFactoryInterface
+     */
+    private $orderFactory;
+
+    /**
+     * @var InitPaymentResponseFactory
+     */
+    private $initPaymentResponseFactory;
+
+
+    /**
+     * OrderService constructor.
+     * @param PaymentApiInterface $paymentApi
+     * @param SerializerInterface $serializer
+     * @param CustomerService $customerService
+     * @param OrderFactoryInterface $orderFactory
+     * @param InitPaymentResponseFactory $initPaymentResponseFactory
+     */
+    public function __construct(
+        PaymentApiInterface $paymentApi,
+        SerializerInterface $serializer,
+        CustomerService $customerService,
+        OrderFactoryInterface $orderFactory,
+        InitPaymentResponseFactory $initPaymentResponseFactory
+    ) {
         $this->paymentApi = $paymentApi;
+        $this->customerService = $customerService;
+        $this->serializer = $serializer;
+        $this->customerService = $customerService;
+        $this->orderFactory = $orderFactory;
+        $this->initPaymentResponseFactory = $initPaymentResponseFactory;
     }
 
-//    public function cardPayment()
-//    {
-//        $response = $this->orderController->getOrderAction();
-//
-//        var_dump($response->getStatusCode());die();
-//
-//        if ($response->getStatusCode() !== 200) {
-//            throw new SynchronizerServiceApiException('Cant get balance.');
-//        }
-//
-//        /** @var BalanceResponse $balanceResponse */
-//        $balanceResponse = $this->serializer->deserialize((string)$response->getBody(), BalanceResponse::class, 'json');
-//
-//        if ($balanceResponse->getStatus() !== true) {
-//            throw new SynchronizerServiceApiException($balanceResponse->getError());
-//        }
-//    }
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @return InitPaymentResponse
+     */
+    public function proceedNewOrder(ParamFetcher $paramFetcher): InitPaymentResponse
+    {
+        $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
+
+        $orderContext = new OrderContext($paramFetcher, $customer);
+        $order = $this->orderFactory->create($orderContext);
+
+        $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
+        $response = $this->makePayment($paymentContext);
+        $initPaymentResponseContext = new InitPaymentResponseContext(json_decode($response->getContent(),true));
+
+        $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
+        $this->customerService->setTokenToCustomer($customer, $initPaymentResponse);
+        $this->customerService->eraseCredentials($customer, $initPaymentResponse);
+
+        return $initPaymentResponse;
+    }
 
 
     /**
@@ -81,7 +122,7 @@ class OrderService
      */
     public function makePayment(PaymentContext $context): Response
     {
-        return $this->getApi()->initPayments((array) $context);
+        return $this->getApi()->initPayment((array) $context);
     }
 
     /**
@@ -90,7 +131,7 @@ class OrderService
      */
     public function makeCharge(array $attributes): Response
     {
-        return $this->getApi()->charges($attributes);
+        return $this->getApi()->charge($attributes);
     }
 
     /**
@@ -99,6 +140,6 @@ class OrderService
      */
     public function getOrderStatus(array $attributes): Response
     {
-        return $this->getApi()->orderStatus($attributes);
+        return $this->getApi()->status($attributes);
     }
 }

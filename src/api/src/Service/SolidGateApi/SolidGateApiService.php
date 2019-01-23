@@ -39,26 +39,26 @@ class SolidGateApiService extends Api implements PaymentApiInterface
      * @param array $attributes
      * @return Response
      */
-    public function initPayments(array $attributes): Response
+    public function initPayment(array $attributes): Response
     {
-        return new Response($this->serializer->serialize($this->initPayment($attributes), 'json'));
+        return new Response($this->serializer->serialize(parent::initPayment($attributes), 'json'));
     }
 
     /**
      * @param array $attributes
      * @return Response
      */
-    public function charges(array $attributes): Response
+    public function charge(array $attributes): Response
     {
-        return new Response($this->serializer->serialize($this->charge($attributes), 'json'));
+        return new Response($this->serializer->serialize(parent::charge($attributes), 'json'));
     }
 
     /**
      * @param array $attributes
      * @return Response
      */
-    public function orderStatus(array $attributes): Response
+    public function status(array $attributes): Response
     {
-        return new Response($this->serializer->serialize($this->status($attributes), 'json'));
+        return new Response($this->serializer->serialize(parent::status($attributes), 'json'));
     }
 }
