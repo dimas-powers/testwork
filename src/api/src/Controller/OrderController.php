@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Exception\CustomerException;
-use App\Factory\Order\OrderContext;
 use App\Factory\Order\OrderFactoryInterface;
-use App\Factory\Payment\InitPaymentResponseContext;
 use App\Factory\Payment\InitPaymentResponseFactory;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\OrderService;
-use App\Service\Order\PaymentContext;
-use App\Service\Order\Response\InitPaymentResponse;
-use App\Service\SolidGateApi\SolidGateApiService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +16,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
 use FOS\RestBundle\Request\ParamFetcher;
-use Symfony\Component\HttpFoundation\Request;
 
 class OrderController extends AbstractFOSRestController
 {
@@ -67,7 +61,7 @@ class OrderController extends AbstractFOSRestController
     /**
      * @param ParamFetcher $paramFetcher
      *
-     * @RequestParam(name="amount", requirements="\d+", nullable=true)
+     * @RequestParam(name="amount", requirements="\d+")
      * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
      * @RequestParam(name="customer_email", requirements="[^@]+@[^\.]+\..+")
      * @RequestParam(name="geo_country", requirements="[A-z]+")
@@ -76,8 +70,9 @@ class OrderController extends AbstractFOSRestController
      * @RequestParam(name="platform", requirements="[A-z]+")
      *
      * @Route("/api/order", name="order", methods={"PUT"})
-
+     *
      * @return Response
+     * @throws CustomerException
      */
     public function putOrder(ParamFetcher $paramFetcher): Response
     {
@@ -87,40 +82,48 @@ class OrderController extends AbstractFOSRestController
     }
 
     /**
-     * @Route("/api/charge", name="charge")
+     * @param ParamFetcher $paramFetcher
+     *
+     * @QueryParam(name="order_id", requirements="\d+")
+     *
+     * @Route("/api/order-status", name="order-status", methods={"GET"})
+     *
+     * @return Response
+     * @throws \App\Exception\OrderException
      */
-    public function getCharge()
+    public function getOrderStatus(ParamFetcher $paramFetcher): Response
     {
-        $attributes = [
-            'order_id' => 128,
-            'amount' => 1,
-            'currency' => 'USD',
-            'card_number' => 4532456618142692,
-            'card_holder' => 'Kurt Cruickshank',
-            'card_exp_month' => 03,
-            'card_exp_year' => 2021,
-            'card_cvv' => 967,
-            'card_pin' => 1111,
-            'order_description' => 'Premium package',
-            'customer_email' => 'jondou@gmail.com',
-            'ip_address' => '8.8.8.8',
-            'platform' => 'web',
-            'geo_country' => 'GBR'
-        ];
+        $orderStatusResponse = $this->orderService->getOrderStatus($paramFetcher);
 
-        $response = $this->orderService->makeCharge($attributes);
+        return new Response($this->serializer->serialize($orderStatusResponse, 'json'));
     }
 
     /**
      * @param ParamFetcher $paramFetcher
      *
-     * @QueryParam(name="order_id", requirements="\d+", nullable=true)
+     * @RequestParam(name="order_id", requirements="\d+")
+     * @RequestParam(name="amount", requirements="\d+")
+     * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
+     * @RequestParam(name="card_number", requirements="\d+")
+     * @RequestParam(name="card_holder", requirements="[a-z]+")
+     * @RequestParam(name="card_exp_month", requirements="\d+")
+     * @RequestParam(name="card_exp_year", requirements="\d+")
+     * @RequestParam(name="card_cvv", requirements="\d+")
+     * @RequestParam(name="card_pin", requirements="\d+")
+     * @RequestParam(name="order_description", requirements="^[a-zA-Z0-9_ ]+")
+     * @RequestParam(name="customer_email", requirements="[^@]+@[^\.]+\..+")
+     * @RequestParam(name="ip_address", requirements="\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+     * @RequestParam(name="platform", requirements="[A-z]+")
+     * @RequestParam(name="geo_country", requirements="[A-z]+")
      *
-     * @Route("/api/order-status", name="order-status", methods={"GET"})
+     * @Route("/api/charge", name="charge")
+     *
+     * @return Response
      */
-    public function getOrderStatus(ParamFetcher $paramFetcher)
+    public function getCharge(ParamFetcher $paramFetcher): Response
     {
-        $response = $this->orderService->getOrderStatus($paramFetcher);
-//        var_dump($response->getContent());die();
+        $response = $this->orderService->proceedCharge($paramFetcher);
+
+        return new Response($this->serializer->serialize($response, 'json'));
     }
 }

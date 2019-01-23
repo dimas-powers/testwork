@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace App\Service\Order;
 
-use App\Controller\OrderController;
+use App\Entity\Customer;
 use App\Entity\Order;
 use App\Exception\CustomerException;
 use App\Exception\OrderException;
@@ -25,11 +25,9 @@ use App\Service\Customer\CustomerService;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\Order\Response\OrderStatusResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
-use App\Service\SolidGateApi\SolidGateApiService;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 class OrderService
 {
@@ -113,8 +111,7 @@ class OrderService
             throw new CustomerException('There is no customer with such email');
         }
 
-        $orderContext = new OrderContext($paramFetcher, $customer);
-        $order = $this->orderFactory->create($orderContext);
+        $order = $this->createNewOrder($paramFetcher, $customer);
 
         $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
         $response = $this->makePayment($paymentContext);
@@ -123,6 +120,11 @@ class OrderService
         $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
 
         return $initPaymentResponse;
+    }
+
+    public function proceedCharge(ParamFetcher $paramFetcher)
+    {
+        var_dump($paramFetcher);die();
     }
 
     /**
@@ -155,6 +157,22 @@ class OrderService
         }
 
         return $orderStatusResponse;
+    }
+
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @param Customer $customer
+     * @return Order
+     */
+    public function createNewOrder(ParamFetcher $paramFetcher, Customer $customer): Order
+    {
+        $orderContext = new OrderContext($paramFetcher, $customer);
+        $order = $this->orderFactory->create($orderContext);
+
+        $this->entityManager->persist($order);
+        $this->entityManager->flush();
+
+        return $order;
     }
 
     /**

@@ -14,16 +14,11 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class OrderFactory implements OrderFactoryInterface
 {
+
     /**
-     * @var EntityManagerInterface
+     * @param OrderContextInterface $context
+     * @return Order
      */
-    private $entityManager;
-
-    public function __construct(EntityManagerInterface $entityManager)
-    {
-        $this->entityManager = $entityManager;
-    }
-
     public function create(OrderContextInterface $context): Order
     {
         $order = new Order();
@@ -34,9 +29,6 @@ class OrderFactory implements OrderFactoryInterface
         $order->setGeoCountry($context->getGeoCountry());
         $order->setIpAddress($context->getIpAddress());
         $order->setPlatform($context->getPlatform());
-
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
 
         return $order;
     }
