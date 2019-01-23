@@ -23,7 +23,7 @@ class InitPaymentResponseFactory implements InitPaymentResponseFactoryInterface
         $initPaymentResponse->setStatus($initPaymentResponseContext->getStatus());
         $initPaymentResponse->setCurrency($initPaymentResponseContext->getCurrency());
         $initPaymentResponse->setFraudulent($initPaymentResponseContext->getFraudulent());
-        $initPaymentResponse->setTotalFeeAmount($initPaymentResponseContext->getToken());
+        $initPaymentResponse->setTotalFeeAmount($initPaymentResponseContext->getTotalFeeAmount());
 
         return $initPaymentResponse;
     }
