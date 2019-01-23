@@ -101,11 +101,11 @@ class OrderController extends AbstractFOSRestController
     /**
      * @param ParamFetcher $paramFetcher
      *
-     * @RequestParam(name="order_id", requirements="\d+")
      * @RequestParam(name="amount", requirements="\d+")
+     * @RequestParam(name="order_id", requirements="\d+")
      * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
      * @RequestParam(name="card_number", requirements="\d+")
-     * @RequestParam(name="card_holder", requirements="[a-z]+")
+     * @RequestParam(name="card_holder", requirements="^[a-zA-Z_ ]+")
      * @RequestParam(name="card_exp_month", requirements="\d+")
      * @RequestParam(name="card_exp_year", requirements="\d+")
      * @RequestParam(name="card_cvv", requirements="\d+")
@@ -116,7 +116,7 @@ class OrderController extends AbstractFOSRestController
      * @RequestParam(name="platform", requirements="[A-z]+")
      * @RequestParam(name="geo_country", requirements="[A-z]+")
      *
-     * @Route("/api/charge", name="charge")
+     * @Route("/api/charge", name="charge", methods={"PUT"})
      *
      * @return Response
      */

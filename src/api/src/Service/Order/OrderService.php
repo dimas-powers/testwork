@@ -15,6 +15,8 @@ use App\Entity\Customer;
 use App\Entity\Order;
 use App\Exception\CustomerException;
 use App\Exception\OrderException;
+use App\Factory\Charge\ChargeResponseContext;
+use App\Factory\Charge\ChargeResponseFactory;
 use App\Factory\Order\OrderContext;
 use App\Factory\Order\OrderFactoryInterface;
 use App\Factory\OrderStatus\OrderStatusResponseContext;
@@ -22,6 +24,7 @@ use App\Factory\OrderStatus\OrderStatusResponseFactory;
 use App\Factory\Payment\InitPaymentResponseContext;
 use App\Factory\Payment\InitPaymentResponseFactory;
 use App\Service\Customer\CustomerService;
+use App\Service\Order\Response\ChargeResponse;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\Order\Response\OrderStatusResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
@@ -65,6 +68,11 @@ class OrderService
     private $orderStatusResponseFactory;
 
     /**
+     * @var ChargeResponseFactory
+     */
+    private $chargeResponseFactory;
+
+    /**
      * @var EntityManagerInterface
      */
     private $entityManager;
@@ -78,6 +86,7 @@ class OrderService
      * @param OrderFactoryInterface $orderFactory
      * @param InitPaymentResponseFactory $initPaymentResponseFactory
      * @param OrderStatusResponseFactory $orderStatusResponseFactory
+     * @param ChargeResponseFactory $chargeResponseFactory
      */
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -86,7 +95,8 @@ class OrderService
         CustomerService $customerService,
         OrderFactoryInterface $orderFactory,
         InitPaymentResponseFactory $initPaymentResponseFactory,
-        OrderStatusResponseFactory $orderStatusResponseFactory
+        OrderStatusResponseFactory $orderStatusResponseFactory,
+        ChargeResponseFactory $chargeResponseFactory
     ) {
         $this->entityManager = $entityManager;
         $this->paymentApi = $paymentApi;
@@ -96,6 +106,7 @@ class OrderService
         $this->orderFactory = $orderFactory;
         $this->initPaymentResponseFactory = $initPaymentResponseFactory;
         $this->orderStatusResponseFactory = $orderStatusResponseFactory;
+        $this->chargeResponseFactory = $chargeResponseFactory;
     }
 
     /**
@@ -108,7 +119,9 @@ class OrderService
         $customer = $this->customerService->getCustomerByRequestEmail($paramFetcher);
 
         if ($customer === null) {
-            throw new CustomerException('There is no customer with such email');
+            throw new CustomerException(
+                sprintf('There is no order with email=%s',$paramFetcher->get('customer_email'))
+            );
         }
 
         $order = $this->createNewOrder($paramFetcher, $customer);
@@ -122,9 +135,37 @@ class OrderService
         return $initPaymentResponse;
     }
 
-    public function proceedCharge(ParamFetcher $paramFetcher)
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @return ChargeResponse
+     * @throws OrderException
+     */
+    public function proceedCharge(ParamFetcher $paramFetcher): ChargeResponse
     {
-        var_dump($paramFetcher);die();
+        /**
+         * @var Order $order
+         */
+        $order = $this->getOrderByRequestEmail($paramFetcher);
+
+        if ($order === null) {
+            throw new OrderException(
+                sprintf('There is no order with id=%d',$paramFetcher->get('order_id'))
+            );
+        }
+
+        $paymentContext = new ChargeContext($paramFetcher);
+        $response = $this->makeCharge($paymentContext);
+
+        $chargeResponseContext = new ChargeResponseContext($response);
+        $chargeResponse = $this->chargeResponseFactory->create($chargeResponseContext);
+
+        $customer = $order->getCustomer();
+
+        if ($chargeResponse->getStatus() === self::STATUS_APPROVED) {
+            $this->customerService->eraseCredentials($customer, $order);
+        }
+
+        return $chargeResponse;
     }
 
     /**
@@ -140,7 +181,9 @@ class OrderService
         $order = $this->getOrderByRequestEmail($paramFetcher);
 
         if ($order === null) {
-            throw new OrderException('There is no order with such id');
+            throw new OrderException(
+                sprintf('There is no order with id=%d',$paramFetcher->get('order_id'))
+            );
         }
 
         $orderStatusContext = new OrderStatusContext($paramFetcher);
@@ -153,7 +196,6 @@ class OrderService
 
         if ($orderStatusResponse->getStatus() === self::STATUS_APPROVED) {
             $this->customerService->setTokenToCustomer($customer, $order);
-            $this->customerService->eraseCredentials($customer, $order);
         }
 
         return $orderStatusResponse;
@@ -212,14 +254,21 @@ class OrderService
     }
 
     /**
-     * @param array $attributes
+     * @param ChargeContext $context
      * @return array
      */
-    public function makeCharge(array $attributes): array
+    public function makeCharge(ChargeContext $context): array
     {
-        return $this->getApi()->charge($attributes);
+        return $this->getApi()->charge((array) $context);
     }
-
+//    /**
+//     * @param array $context
+//     * @return array
+//     */
+//    public function makeCharge(array $context): array
+//    {
+//        return $this->getApi()->charge($context);
+//    }
     /**
      * @param OrderStatusContext $attributes
      * @return array

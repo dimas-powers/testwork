@@ -14,7 +14,6 @@ namespace App\Service\Customer;
 use App\Entity\Balance;
 use App\Entity\Customer;
 use App\Entity\Order;
-use App\Service\Order\Response\InitPaymentResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
 
