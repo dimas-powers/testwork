@@ -21,6 +21,7 @@ use App\Service\Customer\CustomerService;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use App\Service\SolidGateApi\SolidGateApiService;
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,9 +54,14 @@ class OrderService
      */
     private $initPaymentResponseFactory;
 
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
 
     /**
      * OrderService constructor.
+     * @param EntityManagerInterface $entityManager
      * @param PaymentApiInterface $paymentApi
      * @param SerializerInterface $serializer
      * @param CustomerService $customerService
@@ -63,12 +69,14 @@ class OrderService
      * @param InitPaymentResponseFactory $initPaymentResponseFactory
      */
     public function __construct(
+        EntityManagerInterface $entityManager,
         PaymentApiInterface $paymentApi,
         SerializerInterface $serializer,
         CustomerService $customerService,
         OrderFactoryInterface $orderFactory,
         InitPaymentResponseFactory $initPaymentResponseFactory
     ) {
+        $this->entityManager = $entityManager;
         $this->paymentApi = $paymentApi;
         $this->customerService = $customerService;
         $this->serializer = $serializer;
@@ -90,15 +98,36 @@ class OrderService
 
         $paymentContext = new PaymentContext($order, $customer, $paramFetcher);
         $response = $this->makePayment($paymentContext);
-        $initPaymentResponseContext = new InitPaymentResponseContext(json_decode($response->getContent(),true));
+        $initPaymentResponseContext = new InitPaymentResponseContext($response);
 
         $initPaymentResponse = $this->initPaymentResponseFactory->create($initPaymentResponseContext);
+
         $this->customerService->setTokenToCustomer($customer, $initPaymentResponse);
         $this->customerService->eraseCredentials($customer, $initPaymentResponse);
 
         return $initPaymentResponse;
     }
 
+    public function getOrderStatus(ParamFetcher $paramFetcher)
+    {
+        /**
+         * @var Order $order
+         */
+        $order = $this->getOrderByRequestEmail($paramFetcher);
+
+        $response = $this->getStatus($paramFetcher);
+    }
+
+    /**
+     * @param ParamFetcher $fetcher
+     * @return Order|null
+     */
+    public function getOrderByRequestEmail(ParamFetcher $fetcher): ?Order
+    {
+        $orderId = $fetcher->get('order_id');
+
+        return $this->entityManager->getRepository(Order::class)->findOneBy(['id' => $orderId]);
+    }
 
     /**
      * @return PaymentApiInterface
@@ -118,28 +147,28 @@ class OrderService
 
     /**
      * @param PaymentContext $context
-     * @return Response
+     * @return array
      */
-    public function makePayment(PaymentContext $context): Response
+    public function makePayment(PaymentContext $context): array
     {
         return $this->getApi()->initPayment((array) $context);
     }
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function makeCharge(array $attributes): Response
+    public function makeCharge(array $attributes): array
     {
         return $this->getApi()->charge($attributes);
     }
 
     /**
-     * @param array $attributes
-     * @return Response
+     * @param PaymentContext $attributes
+     * @return array
      */
-    public function getOrderStatus(array $attributes): Response
+    public function getStatus(OrderContext $attributes): array
     {
-        return $this->getApi()->status($attributes);
+        return $this->getApi()->status((array) $attributes);
     }
 }

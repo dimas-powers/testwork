@@ -9,26 +9,27 @@
 declare(strict_types=1);
 
 namespace App\Service\SolidGateApi\Interfaces;
-
-use Symfony\Component\HttpFoundation\Response;
-
+/**
+ * Interface PaymentApiInterface
+ * @package App\Service\SolidGateApi\Interfaces
+ */
 interface PaymentApiInterface
 {
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function initPayment(array $attributes): Response;
+    public function initPayment(array $attributes): array;
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function charge(array $attributes): Response;
+    public function charge(array $attributes): array;
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function status(array $attributes): Response;
+    public function status(array $attributes): array;
 }

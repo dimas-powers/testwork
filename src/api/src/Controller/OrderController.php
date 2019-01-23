@@ -65,6 +65,8 @@ class OrderController extends AbstractFOSRestController
     }
 
     /**
+     * @param ParamFetcher $paramFetcher
+     *
      * @RequestParam(name="amount", requirements="\d+", nullable=true)
      * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
      * @RequestParam(name="customer_email", requirements="[^@]+@[^\.]+\..+")
@@ -74,8 +76,10 @@ class OrderController extends AbstractFOSRestController
      * @RequestParam(name="platform", requirements="[A-z]+")
      *
      * @Route("/api/order", name="order", methods={"PUT"})
+
+     * @return Response
      */
-    public function putOrder(ParamFetcher $paramFetcher)
+    public function putOrder(ParamFetcher $paramFetcher): Response
     {
         $initPaymentResponse = $this->orderService->proceedNewOrder($paramFetcher);
 
@@ -108,15 +112,19 @@ class OrderController extends AbstractFOSRestController
     }
 
     /**
-     * @Route("/api/order-status", name="order-status")
+     * @param ParamFetcher $paramFetcher
+     *
+     * @RequestParam(name="order_id", requirements="\d+", nullable=true)
+     *
+     * @Route("/api/order-status", name="order-status", methods={"GET"})
      */
-    public function getOrderStatus()
+    public function getOrderStatus(ParamFetcher $paramFetcher)
     {
-        $attributes = [
-            'order_id' => 127
-        ];
+//        $attributes = [
+//            'order_id' => 127
+//        ];
 
-        $response = $this->orderService->getOrderStatus($attributes);
+        $response = $this->orderService->getOrderStatus($paramFetcher);
         var_dump($response->getContent());die();
     }
 }

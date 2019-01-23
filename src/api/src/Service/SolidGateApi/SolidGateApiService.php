@@ -13,9 +13,12 @@ namespace App\Service\SolidGateApi;
 
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use Signedpay\API\Api;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/**
+ * Class SolidGateApiService
+ * @package App\Service\SolidGateApi
+ */
 class SolidGateApiService extends Api implements PaymentApiInterface
 {
     /**
@@ -37,28 +40,28 @@ class SolidGateApiService extends Api implements PaymentApiInterface
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function initPayment(array $attributes): Response
+    public function initPayment(array $attributes): array
     {
-        return new Response($this->serializer->serialize(parent::initPayment($attributes), 'json'));
+        return parent::initPayment($attributes);
     }
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function charge(array $attributes): Response
+    public function charge(array $attributes): array
     {
-        return new Response($this->serializer->serialize(parent::charge($attributes), 'json'));
+        return parent::charge($attributes);
     }
 
     /**
      * @param array $attributes
-     * @return Response
+     * @return array
      */
-    public function status(array $attributes): Response
+    public function status(array $attributes): array
     {
-        return new Response($this->serializer->serialize(parent::status($attributes), 'json'));
+        return parent::status($attributes);
     }
 }

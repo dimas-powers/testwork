@@ -62,6 +62,11 @@ class Order
      */
     private $customer;
 
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $status;
+
     public function getId(): int
     {
         return $this->id;
@@ -180,5 +185,21 @@ class Order
     public function setPlatform($platform): void
     {
         $this->platform = $platform;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param mixed $status
+     */
+    public function setStatus($status): void
+    {
+        $this->status = $status;
     }
 }

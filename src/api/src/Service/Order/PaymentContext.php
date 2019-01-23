@@ -31,7 +31,7 @@ class PaymentContext
         $this->customer_email = $customer->getEmail();
         $this->geo_country = $paramFetcher->get('geo_country');
         $this->ip_address = $paramFetcher->get('ip_address');
-        $this->order_id = random_int(999,99999);
+        $this->order_id = $order->getId();
         $this->order_description = $order->getDescription();
         $this->platform = $paramFetcher->get('platform');
     }
