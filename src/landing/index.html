@@ -6,32 +6,47 @@
 <body>
     <h1>Some product</h1>
 
-    <input type="button" value="Buy" onclick="console.log('buy')" />
+    <form>
+        <input type="number" name="amount" value="2132" />
+        <input type="text" name="customer_email" value="somemail@gmail.com" />
+    </form>
+
+    <input type="button" value="Buy" onclick="createOrder()" />
 
     <script>
-        const fixture = {
-            'amount': 2001,
-            'currency': 'USD',
-            'customer_email': 'somemail@gmail.com',
-            'geo_country': 'GBR',
-            'ip_address': '194.23.123.23',
-            'order_id': 3131223,
-            'order_description': 'Premium order',
-            'platform': 'WEB'
-        };
+        let formData = new FormData(document.querySelector('form'));
+        // formData.append('amount', 2001);
+        formData.append('currency', 'USD');
+        // formData.append('customer_email', 'somemail@gmail.com');
+        formData.append('geo_country', 'GBR');
+        formData.append('ip_address', '194.23.123.23');
+        formData.append('order_id', 3131223);
+        formData.append('order_description', 'Premium order');
+        formData.append('platform', 'WEB');
+
+        // const fixture = {
+        //     'amount': 2001,
+        //     'currency': 'USD',
+        //     'customer_email': 'somemail@gmail.com',
+        //     'geo_country': 'GBR',
+        //     'ip_address': '194.23.123.23',
+        //     'order_id': 3131223,
+        //     'order_description': 'Premium order',
+        //     'platform': 'WEB'
+        // };
 
         const createOrder = () => {
             $.ajax({
-                url: 'http://127.0.0.1:8081',
+                url: 'http://127.0.0.1:8081/api/order',
                 method: 'PUT',
-                dataType: 'json',
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify(fixture)
+                crossDomain: true,
+                processData: false,
+                data: formData
             })
-            .done((...args) => {
+                .done((...args) => {
                 console.log('Success', args);
             })
-            .fail((...args) => {
+        .fail((...args) => {
                 console.log('Fail', args);
             });
         }
