@@ -64,4 +64,22 @@ class SolidGateApiService extends Api implements PaymentApiInterface
     {
         return parent::status($attributes);
     }
+
+    /**
+     * @param array $attributes
+     * @return array
+     */
+    public function recurring(array $attributes): array
+    {
+        return parent::recurring($attributes);
+    }
+
+    /**
+     * @param array $attributes
+     * @return array
+     */
+    public function refund(array $attributes): array
+    {
+        return parent::refund($attributes);
+    }
 }

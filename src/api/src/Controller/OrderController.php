@@ -101,11 +101,11 @@ class OrderController extends AbstractFOSRestController
     /**
      * @param ParamFetcher $paramFetcher
      *
-     * @RequestParam(name="order_id", requirements="\d+")
      * @RequestParam(name="amount", requirements="\d+")
+     * @RequestParam(name="order_id", requirements="\d+")
      * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
      * @RequestParam(name="card_number", requirements="\d+")
-     * @RequestParam(name="card_holder", requirements="[a-z]+")
+     * @RequestParam(name="card_holder", requirements="^[a-zA-Z_ ]+")
      * @RequestParam(name="card_exp_month", requirements="\d+")
      * @RequestParam(name="card_exp_year", requirements="\d+")
      * @RequestParam(name="card_cvv", requirements="\d+")
@@ -116,13 +116,54 @@ class OrderController extends AbstractFOSRestController
      * @RequestParam(name="platform", requirements="[A-z]+")
      * @RequestParam(name="geo_country", requirements="[A-z]+")
      *
-     * @Route("/api/charge", name="charge")
+     * @Route("/api/charge", name="charge", methods={"PUT"})
+     *
+     * @return Response
+     * @throws \App\Exception\OrderException
+     */
+    public function putCharge(ParamFetcher $paramFetcher): Response
+    {
+        $response = $this->orderService->proceedCharge($paramFetcher);
+
+        return new Response($this->serializer->serialize($response, 'json'));
+    }
+
+    /**
+     * @param ParamFetcher $paramFetcher
+     *
+     * @RequestParam(name="amount", requirements="\d+")
+     * @RequestParam(name="order_id", requirements="\d+")
+     * @RequestParam(name="currency", requirements="[a-z]+", default="USD")
+     * @RequestParam(name="recurring_token", requirements="^[a-zA-Z0-9_ ]+")
+     * @RequestParam(name="order_description", requirements="^[a-zA-Z0-9_ ]+")
+     * @RequestParam(name="customer_email", requirements="[^@]+@[^\.]+\..+")
+     * @RequestParam(name="ip_address", requirements="\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+     * @RequestParam(name="platform", requirements="[A-z]+")
+     *
+     * @Route("/api/recurring", name="recurring", methods={"PUT"})
      *
      * @return Response
      */
-    public function getCharge(ParamFetcher $paramFetcher): Response
+    public function putRecurring(ParamFetcher $paramFetcher): Response
     {
-        $response = $this->orderService->proceedCharge($paramFetcher);
+        $response = $this->orderService->proceedRecurring($paramFetcher);
+
+        return new Response($this->serializer->serialize($response, 'json'));
+    }
+
+    /**
+     * @param ParamFetcher $paramFetcher
+     *
+     * @RequestParam(name="amount", requirements="\d+")
+     * @RequestParam(name="order_id", requirements="\d+")
+     *
+     * @Route("/api/refund", name="refund", methods={"PUT"})
+     *
+     * @return Response
+     */
+    public function putRefund(ParamFetcher $paramFetcher): Response
+    {
+        $response = $this->orderService->proceedRefund($paramFetcher);
 
         return new Response($this->serializer->serialize($response, 'json'));
     }

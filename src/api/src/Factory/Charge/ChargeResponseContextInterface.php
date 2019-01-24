@@ -7,10 +7,9 @@ declare(strict_types=1);
  * Time: 12:03
  */
 
-namespace App\Factory\OrderStatus;
+namespace App\Factory\Charge;
 
-interface OrderStatusResponseContextInterface
+interface ChargeResponseContextInterface
 {
     public function getStatus();
-    public function getToken();
 }

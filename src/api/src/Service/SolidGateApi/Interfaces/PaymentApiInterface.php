@@ -32,4 +32,16 @@ interface PaymentApiInterface
      * @return array
      */
     public function status(array $attributes): array;
+
+    /**
+     * @param array $attributes
+     * @return array
+     */
+    public function recurring(array $attributes): array;
+
+    /**
+     * @param array $attributes
+     * @return array
+     */
+    public function refund(array $attributes): array;
 }

@@ -16,11 +16,18 @@ class OrderStatusResponseContext implements OrderStatusResponseContextInterface
      */
     private $status;
 
+    /**
+     * @var string
+     */
+    private $token;
 
     public function __construct(array $response)
     {
+        var_dump($response['transactions']['card']['card_token']['token']);die();
         if (isset($response['order']['status'])) {
             $this->status = $response['order']['status'];
+        } elseif (isset($response['card']['token'])) {
+            $this->token = $response['card']['token'];
         }
     }
 
@@ -35,5 +42,21 @@ class OrderStatusResponseContext implements OrderStatusResponseContextInterface
     public function setStatus(string $status): void
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return string
+     */
+    public function getToken(): string
+    {
+        return $this->token;
+    }
+
+    /**
+     * @param string $token
+     */
+    public function setToken(string $token): void
+    {
+        $this->token = $token;
     }
 }

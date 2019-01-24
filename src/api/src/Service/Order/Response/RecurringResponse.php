@@ -9,10 +9,9 @@ declare(strict_types=1);
 
 namespace App\Service\Order\Response;
 
-class OrderStatusResponse
+class RecurringResponse
 {
     protected $status;
-    protected $token;
 
     /**
      * @return mixed
@@ -28,21 +27,5 @@ class OrderStatusResponse
     public function setStatus($status): void
     {
         $this->status = $status;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getToken()
-    {
-        return $this->token;
-    }
-
-    /**
-     * @param mixed $token
-     */
-    public function setToken($token): void
-    {
-        $this->token = $token;
     }
 }

@@ -17,6 +17,7 @@ class OrderStatusResponseFactory implements OrderStatusResponseFactoryInterface
         $orderStatusResponse = new OrderStatusResponse();
 
         $orderStatusResponse->setStatus($orderStatusResponseContext->getStatus());
+        $orderStatusResponse->setToken($orderStatusResponseContext->getToken());
 
         return $orderStatusResponse;
     }

@@ -14,7 +14,7 @@ namespace App\Service\Customer;
 use App\Entity\Balance;
 use App\Entity\Customer;
 use App\Entity\Order;
-use App\Service\Order\Response\InitPaymentResponse;
+use App\Service\Order\Response\OrderStatusResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
 
@@ -49,11 +49,11 @@ class CustomerService
 
     /**
      * @param Customer $customer
-     * @param Order $order
+     * @param OrderStatusResponse $orderStatusResponse
      */
-    public function setTokenToCustomer(Customer $customer, Order $order): void
+    public function setTokenToCustomer(Customer $customer, OrderStatusResponse $orderStatusResponse): void
     {
-        $customer->setToken($order->getAmount());
+        $customer->setToken($orderStatusResponse->getToken());
 
         $this->entityManager->persist($customer);
         $this->entityManager->flush();
@@ -63,7 +63,7 @@ class CustomerService
      * @param Customer $customer
      * @param Order $order
      */
-    public function eraseCredentials(Customer $customer, Order $order): void
+    public function reduceBalance(Customer $customer, Order $order): void
     {
         $balances = $customer->getBalances();
 
