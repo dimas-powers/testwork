@@ -11,5 +11,7 @@ php -r "unlink('composer-setup.php');"
 mv composer.phar /usr/bin/composer
 
 composer install;
+php bin/console doctrine:database:create;
+php bin/console doctrine:migrations:migrate;
 
 exec "$@";
