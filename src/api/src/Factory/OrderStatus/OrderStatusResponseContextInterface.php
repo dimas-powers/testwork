@@ -12,4 +12,5 @@ namespace App\Factory\OrderStatus;
 interface OrderStatusResponseContextInterface
 {
     public function getStatus();
+    public function getToken();
 }

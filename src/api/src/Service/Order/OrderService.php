@@ -27,6 +27,7 @@ use App\Service\Customer\CustomerService;
 use App\Service\Order\Response\ChargeResponse;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\Order\Response\OrderStatusResponse;
+use App\Service\Order\Response\RecurringResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
@@ -162,7 +163,7 @@ class OrderService
         $customer = $order->getCustomer();
 
         if ($chargeResponse->getStatus() === self::STATUS_APPROVED) {
-            $this->customerService->eraseCredentials($customer, $order);
+            $this->customerService->reduceBalance($customer, $order);
         }
 
         return $chargeResponse;
@@ -195,10 +196,31 @@ class OrderService
         $customer = $order->getCustomer();
 
         if ($orderStatusResponse->getStatus() === self::STATUS_APPROVED) {
-            $this->customerService->setTokenToCustomer($customer, $order);
+            $this->customerService->setTokenToCustomer($customer, $orderStatusResponse);
         }
 
         return $orderStatusResponse;
+    }
+
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @return RecurringResponse
+     */
+    public function proceedRecurring(ParamFetcher $paramFetcher): RecurringResponse
+    {
+        $recurringContext = new RecurringContext($paramFetcher);
+        $response = $this->makeRecurring($recurringContext);
+
+    }
+
+    /**
+     * @param ParamFetcher $paramFetcher
+     * @return RecurringResponse
+     */
+    public function proceedRefund(ParamFetcher $paramFetcher): RecurringResponse
+    {
+        $refundContext = new RefundContext($paramFetcher);
+        $response = $this->makeRefund($refundContext);
     }
 
     /**
@@ -261,14 +283,7 @@ class OrderService
     {
         return $this->getApi()->charge((array) $context);
     }
-//    /**
-//     * @param array $context
-//     * @return array
-//     */
-//    public function makeCharge(array $context): array
-//    {
-//        return $this->getApi()->charge($context);
-//    }
+
     /**
      * @param OrderStatusContext $attributes
      * @return array
@@ -276,5 +291,23 @@ class OrderService
     public function getStatus(OrderStatusContext $attributes): array
     {
         return $this->getApi()->status((array) $attributes);
+    }
+
+    /**
+     * @param RecurringContext $recurringContext
+     * @return array
+     */
+    public function makeRecurring(RecurringContext $recurringContext): array
+    {
+        return $this->getApi()->recurring((array) $recurringContext);
+    }
+
+    /**
+     * @param RefundContext $refundContext
+     * @return array
+     */
+    public function makeRefund(RefundContext $refundContext): array
+    {
+        return $this->getApi()->refund((array) $refundContext);
     }
 }
