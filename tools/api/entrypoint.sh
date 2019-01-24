@@ -11,6 +11,9 @@ php -r "unlink('composer-setup.php');"
 mv composer.phar /usr/bin/composer
 
 composer install;
+
+timeout 22 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' db 5433
+
 php bin/console doctrine:database:create;
 php bin/console doctrine:migrations:migrate;
 
