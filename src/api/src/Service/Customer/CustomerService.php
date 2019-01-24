@@ -79,4 +79,25 @@ class CustomerService
         $this->entityManager->persist($balance);
         $this->entityManager->flush();
     }
+
+    /**
+     * @param Customer $customer
+     * @param Order $order
+     */
+    public function increaseBalance(Customer $customer, Order $order): void
+    {
+        $balances = $customer->getBalances();
+
+        /**
+         * @var Balance $balance
+         */
+        foreach ($balances as $balance) {
+            if ($balance->getCurrency() === $order->getCurrency()) {
+                $balance->setAmount($balance->getAmount() + $order->getAmount());
+            }
+        }
+
+        $this->entityManager->persist($balance);
+        $this->entityManager->flush();
+    }
 }

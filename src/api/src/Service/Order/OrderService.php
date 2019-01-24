@@ -23,11 +23,16 @@ use App\Factory\OrderStatus\OrderStatusResponseContext;
 use App\Factory\OrderStatus\OrderStatusResponseFactory;
 use App\Factory\Payment\InitPaymentResponseContext;
 use App\Factory\Payment\InitPaymentResponseFactory;
+use App\Factory\Recurring\RecurringResponseContext;
+use App\Factory\Recurring\RecurringResponseFactory;
+use App\Factory\Refund\RefundResponseContext;
+use App\Factory\Refund\RefundResponseFactory;
 use App\Service\Customer\CustomerService;
 use App\Service\Order\Response\ChargeResponse;
 use App\Service\Order\Response\InitPaymentResponse;
 use App\Service\Order\Response\OrderStatusResponse;
 use App\Service\Order\Response\RecurringResponse;
+use App\Service\Order\Response\RefundResponse;
 use App\Service\SolidGateApi\Interfaces\PaymentApiInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcher;
@@ -37,6 +42,7 @@ class OrderService
 {
     const STATUS_APPROVED = 'approved';
     const STATUS_DECLINED = 'declined';
+    const STATUS_REFUNDED = 'refunded';
 
     /**
      * @var PaymentApiInterface $paymentApi
@@ -74,6 +80,16 @@ class OrderService
     private $chargeResponseFactory;
 
     /**
+     * @var RecurringResponseFactory
+     */
+    private $recurringResponseFactory;
+
+    /**
+     * @var RefundResponseFactory
+     */
+    private $refundResponseFactory;
+
+    /**
      * @var EntityManagerInterface
      */
     private $entityManager;
@@ -88,6 +104,8 @@ class OrderService
      * @param InitPaymentResponseFactory $initPaymentResponseFactory
      * @param OrderStatusResponseFactory $orderStatusResponseFactory
      * @param ChargeResponseFactory $chargeResponseFactory
+     * @param RecurringResponseFactory $recurringResponseFactory
+     * @param RefundResponseFactory $refundResponseFactory
      */
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -97,7 +115,9 @@ class OrderService
         OrderFactoryInterface $orderFactory,
         InitPaymentResponseFactory $initPaymentResponseFactory,
         OrderStatusResponseFactory $orderStatusResponseFactory,
-        ChargeResponseFactory $chargeResponseFactory
+        ChargeResponseFactory $chargeResponseFactory,
+        RecurringResponseFactory $recurringResponseFactory,
+        RefundResponseFactory $refundResponseFactory
     ) {
         $this->entityManager = $entityManager;
         $this->paymentApi = $paymentApi;
@@ -108,6 +128,8 @@ class OrderService
         $this->initPaymentResponseFactory = $initPaymentResponseFactory;
         $this->orderStatusResponseFactory = $orderStatusResponseFactory;
         $this->chargeResponseFactory = $chargeResponseFactory;
+        $this->recurringResponseFactory = $recurringResponseFactory;
+        $this->refundResponseFactory = $refundResponseFactory;
     }
 
     /**
@@ -121,7 +143,7 @@ class OrderService
 
         if ($customer === null) {
             throw new CustomerException(
-                sprintf('There is no order with email=%s',$paramFetcher->get('customer_email'))
+                sprintf('There is no customer with email=%s',$paramFetcher->get('customer_email'))
             );
         }
 
@@ -146,7 +168,7 @@ class OrderService
         /**
          * @var Order $order
          */
-        $order = $this->getOrderByRequestEmail($paramFetcher);
+        $order = $this->getOrderByRequestId($paramFetcher);
 
         if ($order === null) {
             throw new OrderException(
@@ -179,7 +201,7 @@ class OrderService
         /**
          * @var Order $order
          */
-        $order = $this->getOrderByRequestEmail($paramFetcher);
+        $order = $this->getOrderByRequestId($paramFetcher);
 
         if ($order === null) {
             throw new OrderException(
@@ -190,7 +212,9 @@ class OrderService
         $orderStatusContext = new OrderStatusContext($paramFetcher);
         $response = $this->getStatus($orderStatusContext);
 
-        $orderStatusResponseContext = new OrderStatusResponseContext($response);
+        $token = $this->getToken($response);
+
+        $orderStatusResponseContext = new OrderStatusResponseContext($response, $token);
         $orderStatusResponse = $this->orderStatusResponseFactory->create($orderStatusResponseContext);
 
         $customer = $order->getCustomer();
@@ -205,22 +229,73 @@ class OrderService
     /**
      * @param ParamFetcher $paramFetcher
      * @return RecurringResponse
+     * @throws OrderException
      */
     public function proceedRecurring(ParamFetcher $paramFetcher): RecurringResponse
     {
+        /**
+         * @var Order $order
+         */
+        $order = $this->getOrderByRequestId($paramFetcher);
+
+        if ($order === null) {
+            throw new OrderException(
+                sprintf('There is no order with id=%d',$paramFetcher->get('order_id'))
+            );
+        }
+
         $recurringContext = new RecurringContext($paramFetcher);
         $response = $this->makeRecurring($recurringContext);
 
+        $recurringResponseContext = new RecurringResponseContext($response);
+        $recurringResponse = $this->recurringResponseFactory->create($recurringResponseContext);
+
+        $customer = $order->getCustomer();
+
+        if ($recurringResponse->getStatus() === self::STATUS_APPROVED) {
+            $this->customerService->reduceBalance($customer, $order);
+        }
+
+        return $recurringResponse;
     }
 
     /**
      * @param ParamFetcher $paramFetcher
-     * @return RecurringResponse
+     * @return RefundResponse
+     * @throws OrderException
      */
-    public function proceedRefund(ParamFetcher $paramFetcher): RecurringResponse
+    public function proceedRefund(ParamFetcher $paramFetcher): RefundResponse
     {
+        /**
+         * @var Order $order
+         */
+        $order = $this->getOrderByRequestId($paramFetcher);
+
+        if ($order === null) {
+            throw new OrderException(
+                sprintf('There is no order with id=%d', $paramFetcher->get('order_id'))
+            );
+        } elseif ($order->getAmount() !== $paramFetcher->get('amount')) {
+            throw new OrderException(
+                sprintf(
+                    'There is difference between request and log order amount=%d', $paramFetcher->get('order_id')
+                )
+            );
+        }
+
         $refundContext = new RefundContext($paramFetcher);
         $response = $this->makeRefund($refundContext);
+
+        $refundResponseContext = new RefundResponseContext($response);
+        $refundResponse = $this->refundResponseFactory->create($refundResponseContext);
+
+        $customer = $order->getCustomer();
+
+        if ($refundResponse->getStatus() === self::STATUS_REFUNDED) {
+            $this->customerService->increaseBalance($customer, $order);
+        }
+
+        return $refundResponse;
     }
 
     /**
@@ -243,7 +318,7 @@ class OrderService
      * @param ParamFetcher $fetcher
      * @return Order|null
      */
-    public function getOrderByRequestEmail(ParamFetcher $fetcher): ?Order
+    public function getOrderByRequestId(ParamFetcher $fetcher): ?Order
     {
         $orderId = $fetcher->get('order_id');
 
@@ -309,5 +384,23 @@ class OrderService
     public function makeRefund(RefundContext $refundContext): array
     {
         return $this->getApi()->refund((array) $refundContext);
+    }
+
+    /**
+     * @param array $response
+     * @return string
+     */
+    private function getToken(array $response): string
+    {
+        $transactions = array_shift($response);
+        $token = '';
+
+        foreach ($transactions as $transaction) {
+            if (isset($transaction['card']['card_token']['token'])) {
+                $token = $transaction['card']['card_token']['token'];
+            }
+        }
+
+        return $token;
     }
 }

@@ -143,6 +143,7 @@ class OrderController extends AbstractFOSRestController
      * @Route("/api/recurring", name="recurring", methods={"PUT"})
      *
      * @return Response
+     * @throws \App\Exception\OrderException
      */
     public function putRecurring(ParamFetcher $paramFetcher): Response
     {
@@ -160,6 +161,7 @@ class OrderController extends AbstractFOSRestController
      * @Route("/api/refund", name="refund", methods={"PUT"})
      *
      * @return Response
+     * @throws \App\Exception\OrderException
      */
     public function putRefund(ParamFetcher $paramFetcher): Response
     {
